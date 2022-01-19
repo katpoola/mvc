@@ -6,6 +6,33 @@ class Model {
       {id:2, text: 'Be nice', complete: false}
     ]
   }
+
+  addTask(taskText){
+    // create id
+    let id
+    if(this.tasks.length > 0){
+      id = this.tasks[this.tasks.length - 1].id + 1
+    } else {
+      id = 1
+    }
+
+    // create task object
+    const task = {
+      id: id,
+      text: taskText,
+      complete: false
+    }
+
+    // add task to tasks
+    this.tasks.push(task)
+
+    // update view
+    this.onTaskListChanged(this.tasks)
+  }
+
+  taskListChanged(callback){
+    this.onTaskListChanged = callback
+  }
 }
 
 class View {
@@ -16,14 +43,30 @@ class View {
     // title
     this.title = this.setElement('h1')
     this.title.textContent = 'Tasks'
+    // form
+    this.form = this.setElement('form')
+    this.input = this.setElement('input')
+    this.input.type = 'text'
+    this.input.name = 'task'
+    this.placeholder = 'Add new task'
+    // submit button
+    this.submitButton = this.setElement('button')
+    this.submitButton.textContent = 'Add task'
+    // add input and button to form
+    this.form.append(this.input, this.submitButton)
     // task list
     this.taskList = this.setElement('ul')
     // append title and task list to app
-    this.app.append(this.title, this.taskList)
+    this.app.append(this.title, this.form, this.taskList)
   }
 
   // display tasks
   displayTasks(tasks){
+    // delete old data
+    while(this.taskList.firstChild){
+      this.taskList.removeChild(this.taskList.firstChild)
+    }
+    // display new data
     if(tasks.length === 0){
       const p = this.setElement('p')
       p.textContent = 'Add a task if is nothing to do'
@@ -58,6 +101,16 @@ class View {
     }
   }
 
+  addTask(handler){
+    this.form.addEventListener('submit', event => {
+      event.preventDefault()
+      if(this.input.value !== ''){
+        handler(this.input.value)
+        this.input.value = ''
+      }
+    })
+  }
+
   // getters
   getElement(selector){
     const element = document.querySelector(selector)
@@ -79,11 +132,19 @@ class Controller {
     this.model = model
     this.view = view
 
+    this.model.taskListChanged(this.displayTasks)
+    this.view.addTask(this.handleAddTask)
+
     this.displayTasks(this.model.tasks)
   }
 
   displayTasks = tasks => {
     this.view.displayTasks(tasks)
+  }
+
+  handleAddTask = taskText => {
+    console.log('Controller send taskText data to model')
+    this.model.addTask(taskText)
   }
 }
 
